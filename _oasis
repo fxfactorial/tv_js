@@ -1,0 +1,49 @@
+# -*- conf -*-
+OASISFormat: 0.4
+Name:        tv_js
+Version:     0.0.1
+Synopsis:    OCaml library for Apple TV's TVJS Framework
+Authors:     Edgar Aroutiounian <edgar.factorial@gmail.com>
+Maintainers: Edgar Aroutiounian <edgar.factorial@gmail.com>
+Homepage:    https://github.com/fxfactorial/tvjsml
+License:     BSD-3-clause
+OCamlVersion:  >= 4.02.0
+AlphaFeatures: ocamlbuild_more_args
+Plugins:     META (0.4), DevFiles (0.4)
+BuildTools:    ocamlbuild, ocamldoc
+
+Description: Use TVJS to make applications for the AppleTV
+
+PostBuildCommand:
+  sh post_build.sh
+
+PostCleanCommand:
+  rm -f app.js
+
+Library tv_js
+  Path:         src
+  Modules:      Tv_js
+  CompiledObject: byte
+  BuildDepends:
+    js_of_ocaml (>= 2.7), js_of_ocaml.ppx
+
+# Not really an exectuable
+
+Executable example_app
+  Path: example
+  BuildTools:ocamlbuild
+  install: false
+  MainIs: app.ml
+  CompiledObject: byte
+  ByteOpt: -g -w +a-4-40..42-44-45-48
+  BuildDepends: tv_js
+
+# Library body_parser
+#   Path: src
+#   Modules: Body_parser
+#   FindlibName: body_parser
+#   FindlibParent: express
+#   install: true
+#   CompiledObject: byte
+#   BuildDepends: express
+
