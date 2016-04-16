@@ -1,6 +1,7 @@
 open StdLabels
 
-(* Not sure how to make this a private type and make it work *)
+(* Later create an MLI and private type on this record, then people
+   can see the fields but can't actually make one *)
 type device =
   {app_id : string;
    app_version: string;
@@ -164,28 +165,42 @@ class keyboard = object
   end
 
 module type App = sig
-  val on_error :
-    string ->
-    source_url:string option ->
-    error_line:int option ->
-    unit
-  val on_exit    :
-    <message : string; source_url : string option; line_number : int option> -> unit
+  (* val on_error : *)
+  (*   string -> *)
+  (*   source_url:string option -> *)
+  (*   error_line:int option -> *)
+  (*   unit *)
+  (* val on_exit    : *)
+  (*   <message : string; source_url : string option; line_number : int option> -> unit *)
   val on_launch  :
     <launch_context : string;
      location : string;
      reload_data : (string * Js.Unsafe.any) list;
      custom_keys : (string * Js.Unsafe.any) list> -> unit
-  val on_resume  : unit -> unit
-  val on_suspend : unit -> unit
-  val do_reload  :
-    options_when_reload : <reloaded_when : [`On_resume | `Now]> option ->
-    reload_data : (string * Js.Unsafe.any) list ->
-    unit
+  (* val on_resume  : unit -> unit *)
+  (* val on_suspend : unit -> unit *)
+  (* val do_reload  : *)
+  (*   options_when_reload : <reloaded_when : [`On_resume | `Now]> option -> *)
+  (*   reload_data : (string * Js.Unsafe.any) list -> *)
+  (*   unit *)
 end
 
 module Make(App : App) = struct
-  (* Implement this please *)
+
+  open Helper_funcs
+
+  let raw_js = Raw_handles.app_class_raw
+
+  let () =
+    raw_js##.onLaunch := !@(fun options ->
+        App.on_launch (object
+          method launch_context =
+            options <!> "launchContext" |> Js.to_string
+          method location = options <!> "location" |> Js.to_string
+          method reload_data = []
+          method custom_keys = []
+        end)
+      )
 
 end
 
