@@ -1,5 +1,22 @@
 open StdLabels
 
+(* Not sure how to make this a private type and make it work *)
+type device =
+  {app_id : string;
+   app_version: string;
+   model : string;
+   product_type : string;
+   system_version : string;
+   vendor_id : string}
+
+type highlight = {
+  name : string;
+  description : string;
+  start_time : int;
+  duration : int;
+  image_url : string;
+}
+
 module Helper_funcs = struct
   let ( <!> ) obj field = Js.Unsafe.get obj field
   let ( !@ ) f = Js.wrap_callback f
@@ -17,10 +34,11 @@ module Raw_handles = struct
        xmlhttprequest_raw,
        device_raw,
        settings_raw,
-      mediaitem_raw) =
+       mediaitem_raw,
+       playlist_raw) =
     Js.Unsafe.(global##.App, global##.Device, global##.EventListenObject,
                global##.Player, global##.XMLHttpRequest, global##.Device,
-               global##.Settings, global##.MediaItem)
+               global##.Settings, global##.MediaItem, global##.Playlist)
 
   (* functions *)
   let (eval_script_raw,
@@ -49,8 +67,13 @@ class virtual event_listener = object
     event_name:string -> listen_cb:(unit -> unit) -> unit
 end
 
-class mediaitem ?url type_ = object
-  val raw_js = new%js Raw_handles.mediaitem_raw
+class media_item ?existing ?url (media_t: [`Audio | `Video]) = object
+  val raw_js = match existing with
+    | None ->
+      new%js Raw_handles.mediaitem_raw
+        ((match media_t with `Audio -> "audio" | `Video -> "video") |> Js.string)
+        (match url with None -> Js.null | Some u -> Js.string u |> Js.Opt.return)
+    | Some given -> given
 
   method content_rating_domain : [`Movie | `Music | `Tv_show] =
     match (Helper_funcs.m raw_js "contentRatingDomain" [||])
@@ -59,6 +82,52 @@ class mediaitem ?url type_ = object
     | "music" -> `Music
     | "tvshow" -> `Tv_show
     | _ -> raise (Failure "Not possible")
+
+  (* goes from 0 to 1000 *)
+  method content_rating_ranking : int =
+    Helper_funcs.m raw_js "contentRatingRanking" [||]
+
+  method is_explicit = Helper_funcs.m raw_js "isExplicit" [||] |> Js.to_bool
+  method artwork_image_url = ()
+  method description = ()
+  method subtitle = ()
+  method title = ()
+  method type_ : [`Audio | `Video ] =
+    match Helper_funcs.m raw_js "type" [||] |> Js.to_string with
+    | "audio" -> `Audio
+    | "video" -> `Video
+    | _ -> raise (Failure "Not possible")
+  method url = ()
+
+  method set_highlight_groups ~highlights:(highlights: highlight list) =
+    let js_objs =
+      highlights
+      |> List.map ~f:(fun r -> object%js
+                       val name = r.name
+                       val description = r.description
+                       val starttime = r.start_time
+                       val duration = r.duration
+                       val imageURL = r.image_url
+                     end)
+      |> Array.of_list |> Js.array
+    in
+    raw_js##.highLightGroups := js_objs
+
+  method set_interstitials = ()
+
+  method set_resume ~resume_at:(resume_at : [`Int of int | `From_beginning ])
+    : unit = ()
+
+  method set_load_asset_id = ()
+
+  method set_load_certificate = ()
+
+  method set_loadkey = ()
+
+  (* Not sure how to avoid this for methods like push on Playlist but
+     not a huge deal *)
+  method raw = Helper_funcs.(!!raw_js)
+
 end
 
 class player = object
@@ -75,20 +144,11 @@ class player = object
 
 end
 
-(* Not sure how to make this a private type and make it work *)
-type device =
-  {app_id : string;
-   app_version: string;
-   model : string;
-   product_type : string;
-   system_version : string;
-   vendor_id : string}
 
 (* type settings = *)
 (*   {restrictions : string; *)
 (*    langauge : string; *)
 (*   on} *)
-
 
 let device = Raw_handles.(Helper_funcs.(
     {app_id = device_raw <!> "appIdentifier" |> Js.to_string;
@@ -167,3 +227,26 @@ module Functions = struct
 
 end
 
+class playlist = object
+  val raw_js = new%js Raw_handles.playlist_raw
+
+  method media_item index : media_item = Helper_funcs.(
+      (m raw_js "item" [|index|])
+      (* Js.Opt.case (m raw_js "item" [|index|]) *)
+        (* (fun () -> ) *)
+        (* (fun provided  -> ) *)
+    )
+
+  method length : int = Helper_funcs.(raw_js <!> "length")
+
+  method pop : media_item = Helper_funcs.(
+      m raw_js "pop" [||]
+    )
+
+  method push ~media_item:(media_item: media_item) = Helper_funcs.(
+      m raw_js "push" [|media_item#raw|] |> ignore
+    )
+
+  (* method splice ~from:(from:int) ~length:(length: int) ~replace_with:() *)
+
+end
