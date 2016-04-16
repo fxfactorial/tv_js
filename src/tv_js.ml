@@ -4,17 +4,8 @@ module Helper_funcs = struct
   let ( <!> ) obj field = Js.Unsafe.get obj field
   let ( !@ ) f = Js.wrap_callback f
   let ( !! ) o = Js.Unsafe.inject o
+  let m = Js.Unsafe.meth_call
 end
-
-
-(* Not sure how to make this a private type and make it work *)
-type device =
-  {app_id : string;
-   app_version: string;
-   model : string;
-   product_type : string;
-   system_version : string;
-   vendor_id : string}
 
 module Raw_handles = struct
 
@@ -24,9 +15,12 @@ module Raw_handles = struct
        event_listen_raw,
        player_raw,
        xmlhttprequest_raw,
-       device_raw) =
+       device_raw,
+       settings_raw,
+      mediaitem_raw) =
     Js.Unsafe.(global##.App, global##.Device, global##.EventListenObject,
-               global##.Player, global##.XMLHttpRequest, global##.Device)
+               global##.Player, global##.XMLHttpRequest, global##.Device,
+               global##.Settings, global##.MediaItem)
 
   (* functions *)
   let (eval_script_raw,
@@ -46,6 +40,55 @@ module Raw_handles = struct
                js_expr "getActiveDocument", js_expr "openURL")
 
 end
+
+class virtual event_listener = object
+  method virtual add_event_listener :
+    ?extra_info:Js.Unsafe.any option ->
+    event_name:string -> listen_cb:(unit -> unit) -> unit
+  method virtual remove_event_listener :
+    event_name:string -> listen_cb:(unit -> unit) -> unit
+end
+
+class mediaitem ?url type_ = object
+  val raw_js = new%js Raw_handles.mediaitem_raw
+
+  method content_rating_domain : [`Movie | `Music | `Tv_show] =
+    match (Helper_funcs.m raw_js "contentRatingDomain" [||])
+          |> Js.to_string with
+    | "movie" -> `Movie
+    | "music" -> `Music
+    | "tvshow" -> `Tv_show
+    | _ -> raise (Failure "Not possible")
+end
+
+class player = object
+  inherit event_listener
+  val raw_js = new%js Raw_handles.player_raw
+  method add_event_listener ?extra_info ~event_name ~listen_cb = ()
+  method remove_event_listener ~event_name ~listen_cb = ()
+  method overlay_document = ()
+  method playlist = ()
+  method present : unit = Helper_funcs.m raw_js "present" [||]
+  method pause = ()
+  method play = ()
+  method play_back_state = ()
+
+end
+
+(* Not sure how to make this a private type and make it work *)
+type device =
+  {app_id : string;
+   app_version: string;
+   model : string;
+   product_type : string;
+   system_version : string;
+   vendor_id : string}
+
+(* type settings = *)
+(*   {restrictions : string; *)
+(*    langauge : string; *)
+(*   on} *)
+
 
 let device = Raw_handles.(Helper_funcs.(
     {app_id = device_raw <!> "appIdentifier" |> Js.to_string;
@@ -123,3 +166,4 @@ module Functions = struct
   let open_url = ()
 
 end
+
