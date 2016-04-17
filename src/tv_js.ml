@@ -39,6 +39,10 @@ module Helper_funcs = struct
       (fun () -> None)
       (function item -> Some item)
 
+  (** Turn a JavaScript Object into a string *)
+  let stringify o = Js._JSON##stringify o |> Js.to_string
+
+  let parse o = Js._JSON##parse o
 end
 
 module Raw_handles = struct
@@ -149,6 +153,52 @@ class player = object
 
 end
 
+class xml_http_request = object
+  inherit event_listener
+  val raw_js = new%js Raw_handles.xmlhttprequest_raw
+  method add_event_listener ?extra_info ~event_name ~listen_cb = ()
+  method remove_event_listener ~event_name ~listen_cb = ()
+
+  (** For asynchronous requests, this function immediately returns
+      control back to the app. Synchronous requests don’t return control
+      back to the app until the response has arrived. *)
+  method open_
+      ?(sync : [`Async of int | `Sync] = `Sync)
+      ~http_method:(http_method : string)
+      ~url:(url : string) : unit =
+    Helper_funcs.(
+      (match sync with
+       | `Async milli -> raw_js##.timeout := milli
+       | _ -> ());
+      [|!!(http_method |> Js.string); !!(url |> Js.string);
+        !!(match sync with `Sync -> 1 | _ -> 0);
+        (* Docs say it must always be two nulls, args unused by Apple
+           TV *)
+        !!Js.null; !!Js.null|]
+      |> m raw_js "open"
+    )
+
+  method send data : unit = Helper_funcs.(
+      m raw_js "send" [|!!(match data with
+          | None -> Js.null
+          | Some l -> l |> Array.of_list |> Js.Unsafe.obj
+        )|])
+
+  method response_headers = Js.Opt.(Helper_funcs.(
+      let result = m raw_js "getAllResponseHeaders" [||] |> return in
+      (map result Js.to_string)
+      |> to_option
+    ))
+
+  method response = Js.Opt.(
+      map (raw_js##.responseText) Js.to_string
+      |> to_option
+    )
+
+  method add_header ~key ~value : unit =
+    raw_js##setRequestHeader (Js.string key) (Js.string value)
+
+end
 
 (* type settings = *)
 (*   {restrictions : string; *)
@@ -230,7 +280,8 @@ module Functions = struct
         |> Array.of_list
         |> Js.array
       in
-      [|inject eval_us; !!(fun value -> did_load (value |> Js.to_bool))|]
+      [|!!eval_us;
+        !!(fun value -> did_load (value |> Js.to_bool))|]
       |> fun_call Raw_handles.eval_script_raw
     )
 
@@ -260,8 +311,8 @@ end
 class playlist = object
   val raw_js = new%js Raw_handles.playlist_raw
 
-  method media_item index : media_item = Helper_funcs.(
-      (m raw_js "item" [|index|])
+  method media_item (index: int) : media_item = Helper_funcs.(
+      (m raw_js "item" [|!!index|])
       (* Js.Opt.case (m raw_js "item" [|index|]) *)
         (* (fun () -> ) *)
         (* (fun provided  -> ) *)

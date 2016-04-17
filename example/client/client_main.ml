@@ -10,7 +10,9 @@ let () =
   let app = new Electron_main.App.app in
   let main_window = ref Js.null in
   let proc = new process in
-  app#on_window_all_closed (fun () -> if proc#platform <> Darwin then app#quit);
+
+  (fun () -> if proc#platform <> Darwin then app#quit)
+  |> app#on_window_all_closed;
 
   app#on_ready
     (fun () ->
@@ -23,7 +25,6 @@ let () =
 
        main_window_now#load_url
          (Printf.sprintf "file://%s/index.html" (__dirname ()));
-
 
        main_window_now#open_dev_tools;
 
