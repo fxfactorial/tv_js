@@ -1,5 +1,11 @@
 open Nodejs
 
+let start_server () =
+  let app = new Express.app ~existing:None in
+  let express = new Express.express in
+  app#use (express#static (__dirname ()));
+  app#listen ~port:9001
+
 let () =
   let app = new Electron_main.App.app in
   let main_window = ref Js.null in
@@ -11,13 +17,15 @@ let () =
        main_window :=
          Js.Opt.return (new Electron_main.Browser_window.browser_window None);
 
-    let main_window_now =
-      Js.Opt.get !main_window (fun () -> assert false)
-    in
+       let main_window_now =
+         Js.Opt.get !main_window (fun () -> assert false)
+       in
 
-    main_window_now#load_url
+       main_window_now#load_url
          (Printf.sprintf "file://%s/index.html" (__dirname ()));
 
-    main_window_now#open_dev_tools;
 
-    main_window_now#on_closed (fun () -> main_window := Js.null))
+       main_window_now#open_dev_tools;
+
+       main_window_now#on_closed (fun () -> main_window := Js.null));
+  start_server ();
