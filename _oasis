@@ -2,7 +2,7 @@
 OASISFormat: 0.4
 Name:        tv_js
 Version:     0.0.1
-Synopsis:    OCaml library for Apple TV's TVJS Framework
+Synopsis:    "OCaml bindings to Apple TV's TVJS Framework"
 Authors:     Edgar Aroutiounian <edgar.factorial@gmail.com>
 Maintainers: Edgar Aroutiounian <edgar.factorial@gmail.com>
 Homepage:    https://github.com/fxfactorial/tvjsml
@@ -17,8 +17,8 @@ Description: Use TVJS to make applications for the AppleTV
 PostBuildCommand:
   sh post_build.sh
 
-PostCleanCommand:
-  rm -f app.js
+# PostCleanCommand:
+#   sh post_clean.sh
 
 Library tv_js
   Path:         src
@@ -27,22 +27,31 @@ Library tv_js
   BuildDepends:
     js_of_ocaml (>= 2.7), js_of_ocaml.ppx
 
-# Not really an exectuable
+# Not really exectuables
 
 Executable example_app
-  Path: example
+  Path: example/example_app
   BuildTools:ocamlbuild
   install: false
-  MainIs: app.ml
+  MainIs: tv_code.ml
   CompiledObject: byte
   ByteOpt: -g -w +a-4-40..42-44-45-48
   BuildDepends: tv_js
 
-# Library body_parser
-#   Path: src
-#   Modules: Body_parser
-#   FindlibName: body_parser
-#   FindlibParent: express
-#   install: true
-#   CompiledObject: byte
-#   BuildDepends: express
+Executable client_main
+  Path: example/client
+  BuildTools:ocamlbuild
+  install: false
+  MainIs: client_main.ml
+  CompiledObject: byte
+  ByteOpt: -g -w +a-4-40..42-44-45-48
+  BuildDepends: electron.main_process, express, nodejs
+
+Executable renderer
+  Path: example/client
+  BuildTools:ocamlbuild
+  install: false
+  MainIs: client_renderer.ml
+  CompiledObject: byte
+  ByteOpt: -g -w +a-4-40..42-44-45-48
+  BuildDepends: electron.renderer, js_of_ocaml.ppx

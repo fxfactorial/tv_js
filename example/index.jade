@@ -1,0 +1,41 @@
+doctype html
+meta(charset="utf-8")
+head
+  //- link(rel="stylesheet" type="text/css" href="main.css" media="all")
+  title Apple Streaming Client
+
+body#body
+  header
+    //- include src/templates/convey_logo.jade
+    button(id="create") Start Streaming
+  #wrap.wrap
+
+  script(src="/Users/Edgar/Repos/tv_js/example/build/client_renderer.js"
+         type="text/javascript")
+
+  script(type="text/template" id="create_root_el")
+    form(id="creation_form").creation
+      section.left
+        label(for="create_title") Title
+          input(type="text" id="create_title" maxlength="50" pattern="alphanumeric")
+        div#block_container
+        button Submit
+      section.right
+        ul(id="story_units")
+          li(id="who").story-unit: p Who
+          li(id="what").story-unit: p What
+          li(id="where").story-unit: p Where
+          li(id="when").story-unit: p When
+          li(id="why").story-unit: p Why
+
+  script(type="text/template" id="create_block")
+    .block
+    label Block
+      a(id="preview" href="javascript:void(0);").toggle Preview
+      textarea(autocapitalize="sentences" autocomplete="on" spellcheck="true" rows="25")
+      ul.tabs
+        li(id="text").tab.selected: p Text
+        li(id="media").tab: p Media
+        li(id="animation").tab: p Animation
+        li(id="layout").tab: p Layout
+        li(id="settings").tab: p Settings

@@ -39,8 +39,7 @@ configure:
 .PHONY: build doc test all install uninstall reinstall clean distclean configure
 
 # OASIS_STOP
-.PHONY: deploy
+.PHONY: example_test
 
-deploy: build
-	cp app.js \
-'/Users/Edgar/Downloads/TVMLCatalogUsingTVMLTemplates 2/client/js'
+example_test: build
+	electron example/

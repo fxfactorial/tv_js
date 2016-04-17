@@ -1,3 +1,4 @@
 S src
 B _build/src
-PKG js_of_ocaml js_of_ocaml.ppx tv_js
+PKG js_of_ocaml js_of_ocaml.ppx tv_js express
+PKG electron.main_process electron.renderer
