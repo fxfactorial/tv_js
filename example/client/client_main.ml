@@ -26,7 +26,7 @@ let () =
        main_window_now#load_url
          (Printf.sprintf "file://%s/index.html" (__dirname ()));
 
-       main_window_now#open_dev_tools;
+       (* main_window_now#open_dev_tools; *)
 
        main_window_now#on_closed (fun () -> main_window := Js.null));
   start_server ();

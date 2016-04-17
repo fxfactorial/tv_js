@@ -25,9 +25,9 @@ module Delegate = Make(struct
 
     let on_error message ~source_url ~error_line =
       (match source_url, error_line with
-      (* | (Some s_url, Some s_l) -> *)
-      (*   P.sprintf "Error: %s at %s, %d" message s_url s_l *)
-      | _ -> P.sprintf "Error: %s" message)
+       | (Some s_url, Some s_l) ->
+         P.sprintf "Error: %s at %s, %d" message s_url s_l
+       | _ -> P.sprintf "Error: %s" message)
       |> print_endline
 
     (* Your entry point to the application, think
