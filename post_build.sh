@@ -4,4 +4,5 @@
 # javascript by applying various optimizations until a fix-point is
 # reached
 
-js_of_ocaml --pretty --debug-info app.byte -o app.js
+js_of_ocaml --pretty --debug-info \
+	    --no-inline --source-map app.byte -o app.js

@@ -19,44 +19,48 @@ type highlight = {
 }
 
 module Helper_funcs = struct
-  let ( <!> ) obj field = Js.Unsafe.get obj field
+  (* For when you know its going to be there. *)
+  let ( <!!!> ) obj field = Js.Unsafe.get obj field
+
   let ( !@ ) f = Js.wrap_callback f
+
   let ( !! ) o = Js.Unsafe.inject o
+
   let m = Js.Unsafe.meth_call
+
+  (* For when you might get back undefined *)
+  let ( <!!> ) obj key =
+    Js.Optdef.map (obj <!!!> key |> Js.def) Js.to_string
+    |> Js.Optdef.to_option
+
+  (* For when you might get it or null *)
+  let ( <!> ) obj key =
+    Js.Opt.case (obj <!!!> key)
+      (fun () -> None)
+      (function item -> Some item)
+
 end
 
 module Raw_handles = struct
 
   (* objects *)
-  let (app_class_raw,
-       device_class_raw,
-       event_listen_raw,
-       player_raw,
-       xmlhttprequest_raw,
-       device_raw,
-       settings_raw,
-       mediaitem_raw,
-       playlist_raw) =
-    Js.Unsafe.(global##.App, global##.Device, global##.EventListenObject,
-               global##.Player, global##.XMLHttpRequest, global##.Device,
-               global##.Settings, global##.MediaItem, global##.Playlist)
+  let (app_class_raw, device_class_raw, event_listen_raw,
+       player_raw, xmlhttprequest_raw, device_raw,
+       settings_raw, mediaitem_raw, playlist_raw) = Js.Unsafe.(
+      global##.App, global##.Device, global##.EventListenObject,
+      global##.Player, global##.XMLHttpRequest, global##.Device,
+      global##.Settings, global##.MediaItem, global##.Playlist)
 
   (* functions *)
-  let (eval_script_raw,
-       clear_interval_raw,
-       set_interval_raw,
-       set_timeout_raw,
-       format_date_raw,
-       format_duration_raw,
-       formate_number_raw,
-       uuid_raw,
-       get_active_document_raw,
-       open_url_raw ) =
-    Js.Unsafe.(js_expr "evaluateScripts", js_expr "clearInterval",
-               js_expr "setInterval", js_expr "setTimeout",
-               js_expr "formatDate", js_expr "formatDuration",
-               js_expr "formatNumber", js_expr "UUID",
-               js_expr "getActiveDocument", js_expr "openURL")
+  let (eval_script_raw, clear_interval_raw, set_interval_raw,
+       set_timeout_raw, format_date_raw, format_duration_raw,
+       formate_number_raw, uuid_raw, get_active_document_raw,
+       open_url_raw) = Js.Unsafe.(
+      js_expr "evaluateScripts", js_expr "clearInterval",
+      js_expr "setInterval", js_expr "setTimeout",
+      js_expr "formatDate", js_expr "formatDuration",
+      js_expr "formatNumber", js_expr "UUID",
+      js_expr "getActiveDocument", js_expr "openURL")
 
 end
 
@@ -152,12 +156,12 @@ end
 (*   on} *)
 
 let device = Raw_handles.(Helper_funcs.(
-    {app_id = device_raw <!> "appIdentifier" |> Js.to_string;
-     app_version = device_raw <!> "appVersion" |> Js.to_string;
-     model = device_raw <!> "model" |> Js.to_string;
-     product_type = device_raw <!> "model" |> Js.to_string;
-     system_version = device_raw <!> "systemVersion" |> Js.to_string;
-     vendor_id = device_raw <!> "vendorIdentifier" |> Js.to_string}
+    {app_id = device_raw <!!!> "appIdentifier" |> Js.to_string;
+     app_version = device_raw <!!!> "appVersion" |> Js.to_string;
+     model = device_raw <!!!> "model" |> Js.to_string;
+     product_type = device_raw <!!!> "model" |> Js.to_string;
+     system_version = device_raw <!!!> "systemVersion" |> Js.to_string;
+     vendor_id = device_raw <!!!> "vendorIdentifier" |> Js.to_string}
   ))
 
 class keyboard = object
@@ -165,16 +169,18 @@ class keyboard = object
   end
 
 module type App = sig
-  (* val on_error : *)
-  (*   string -> *)
-  (*   source_url:string option -> *)
-  (*   error_line:int option -> *)
-  (*   unit *)
-  (* val on_exit    : *)
-  (*   <message : string; source_url : string option; line_number : int option> -> unit *)
+
+  val on_error :
+    string ->
+    source_url:string option ->
+    error_line:int option ->
+    unit
+
+  val on_exit : <reloading : bool option> -> unit
+
   val on_launch  :
-    <launch_context : string;
-     location : string;
+    <launch_context : string option;
+     location : string option;
      reload_data : (string * Js.Unsafe.any) list;
      custom_keys : (string * Js.Unsafe.any) list> -> unit
   (* val on_resume  : unit -> unit *)
@@ -191,24 +197,33 @@ module Make(App : App) = struct
 
   let raw_js = Raw_handles.app_class_raw
 
+  (* Set the callbacks *)
   let () =
     raw_js##.onLaunch := !@(fun options ->
         App.on_launch (object
-          method launch_context =
-            options <!> "launchContext" |> Js.to_string
-          method location = options <!> "location" |> Js.to_string
+          method launch_context = options <!!> "launchContext"
+          method location = options <!!> "location"
           method reload_data = []
           method custom_keys = []
-        end)
-      )
+        end));
+
+    raw_js##.onError := Js.Opt.(!@(fun error_message source_url line ->
+        App.on_error
+          (error_message |> Js.to_string)
+          (to_option source_url)
+          (to_option line)));
+
+    raw_js##.onExit := !@(fun opts ->
+        App.on_exit (object
+          method reloading = opts <!> "reloading"
+        end))
 
 end
 
 module Functions = struct
   open Helper_funcs
 
-  let eval_js_scripts ~scripts ~did_load:(did_load: bool -> unit) =
-    Js.Unsafe.(
+  let eval_js_scripts ~scripts ~did_load:(did_load: bool -> unit) = Js.Unsafe.(
       let eval_us =
         scripts
         |> List.map ~f:Js.string
@@ -252,7 +267,7 @@ class playlist = object
         (* (fun provided  -> ) *)
     )
 
-  method length : int = Helper_funcs.(raw_js <!> "length")
+  method length : int = Helper_funcs.(raw_js <!!!> "length")
 
   method pop : media_item = Helper_funcs.(
       m raw_js "pop" [||]
