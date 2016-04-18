@@ -15,6 +15,16 @@ let launch_video () =
      player.playlist.push(mediaItem);\
      player.present();})()"
 
+let more_video () =
+  let (player, playlist, media_item) =
+    new player (),
+    new playlist (),
+    new media_item `Video ~url:"http://localhost:9001/working_server.mov"
+  in
+  player#set_playlist playlist;
+  player#playlist#push ~media_item;
+  player#present;
+
 module Delegate = Make(struct
 
     let on_exit obj =
@@ -40,6 +50,7 @@ module Delegate = Make(struct
           | (Some l_ctx, None) -> P.sprintf "Only: launch context: %s" l_ctx
           | _ -> "Neither launch context or location provided from system")
        |> print_endline);
-      launch_video ()
+      more_video ()
+      (* launch_video () *)
 
   end)

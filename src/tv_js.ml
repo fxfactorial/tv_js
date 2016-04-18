@@ -80,8 +80,10 @@ class media_item ?existing ?url (media_t: [`Audio | `Video]) = object
   val raw_js = match existing with
     | None ->
       new%js Raw_handles.mediaitem_raw
-        ((match media_t with `Audio -> "audio" | `Video -> "video") |> Js.string)
-        (match url with None -> Js.null | Some u -> Js.string u |> Js.Opt.return)
+        ((match media_t with `Audio -> "audio"
+                           | `Video -> "video") |> Js.string)
+        (match url with None -> Js.null
+                      | Some u -> Js.string u |> Js.Opt.return)
     | Some given -> given
 
   method content_rating_domain : [`Movie | `Music | `Tv_show] =
@@ -139,13 +141,54 @@ class media_item ?existing ?url (media_t: [`Audio | `Video]) = object
 
 end
 
-class player = object
+and playlist ?existing () = object
+  val raw_js = match existing with
+      None -> new%js Raw_handles.playlist_raw
+    | Some e -> e
+
+  method media_item (index: int) : media_item = Helper_funcs.(
+      (m raw_js "item" [|!!index|])
+      (* Js.Opt.case (m raw_js "item" [|index|]) *)
+        (* (fun () -> ) *)
+        (* (fun provided  -> ) *)
+    )
+
+  method length : int = Helper_funcs.(raw_js <!!!> "length")
+
+  method pop : media_item = Helper_funcs.(
+      m raw_js "pop" [||]
+    )
+
+  method push ~media_item:(media_item: media_item) = Helper_funcs.(
+      m raw_js "push" [|media_item#raw|] |> ignore
+    )
+
+  method unsafe_raw : Js.Unsafe.any Js.t = raw_js
+  (* method splice ~from:(from:int) ~length:(length: int) ~replace_with:() *)
+
+end
+
+and player ?existing () = object(self)
   inherit event_listener
+
   val raw_js = new%js Raw_handles.player_raw
+  val mutable plist = None
+
+  initializer
+    plist <- Some (new playlist ~existing:new%js Raw_handles.playlist_raw ())
+
   method add_event_listener ?extra_info ~event_name ~listen_cb = ()
   method remove_event_listener ~event_name ~listen_cb = ()
   method overlay_document = ()
-  method playlist = ()
+
+  method playlist =
+    match plist with None -> assert false
+                   | Some p -> p
+
+  method set_playlist p =
+    raw_js##.playlist := p#unsafe_raw;
+    plist <- Some p
+
   method present : unit = Helper_funcs.m raw_js "present" [||]
   method pause = ()
   method play = ()
@@ -309,26 +352,3 @@ module Functions = struct
 
 end
 
-class playlist = object
-  val raw_js = new%js Raw_handles.playlist_raw
-
-  method media_item (index: int) : media_item = Helper_funcs.(
-      (m raw_js "item" [|!!index|])
-      (* Js.Opt.case (m raw_js "item" [|index|]) *)
-        (* (fun () -> ) *)
-        (* (fun provided  -> ) *)
-    )
-
-  method length : int = Helper_funcs.(raw_js <!!!> "length")
-
-  method pop : media_item = Helper_funcs.(
-      m raw_js "pop" [||]
-    )
-
-  method push ~media_item:(media_item: media_item) = Helper_funcs.(
-      m raw_js "push" [|media_item#raw|] |> ignore
-    )
-
-  (* method splice ~from:(from:int) ~length:(length: int) ~replace_with:() *)
-
-end
