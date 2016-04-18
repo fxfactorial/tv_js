@@ -271,6 +271,7 @@ module Make(App : App) = struct
 end
 
 module Functions = struct
+
   open Helper_funcs
 
   let eval_js_scripts ~scripts ~did_load:(did_load: bool -> unit) = Js.Unsafe.(

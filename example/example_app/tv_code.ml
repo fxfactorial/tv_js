@@ -38,7 +38,7 @@ module Delegate = Make(struct
             P.sprintf "Launch context: %s, Location: %s" l_ctx loc
           | (None, Some loc) -> P.sprintf "Only: Location: %s" loc
           | (Some l_ctx, None) -> P.sprintf "Only: launch context: %s" l_ctx
-          | _ -> P.sprintf "Neither launch context or location provided from system")
+          | _ -> "Neither launch context or location provided from system")
        |> print_endline);
       launch_video ()
 
