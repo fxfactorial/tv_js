@@ -17,7 +17,8 @@ let () =
   app#on_ready
     (fun () ->
        main_window :=
-         Js.Opt.return (new Electron_main.Browser_window.browser_window None);
+         (new Electron_main.Browser_window.browser_window None)
+         |>Js.Opt.return;
 
        let main_window_now =
          Js.Opt.get !main_window (fun () -> assert false)
@@ -29,4 +30,4 @@ let () =
        main_window_now#open_dev_tools;
 
        main_window_now#on_closed (fun () -> main_window := Js.null));
-  start_server ();
+  start_server ()

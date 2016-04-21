@@ -15,7 +15,7 @@ let launch_video () =
      player.playlist.push(mediaItem);\
      player.present();})()"
 
-let more_video () =
+let video () =
   let (player, playlist, media_item) =
     new player (),
     new playlist (),
@@ -23,7 +23,7 @@ let more_video () =
   in
   player#set_playlist playlist;
   player#playlist#push ~media_item;
-  player#present;
+  player#present
 
 module Delegate = Make(struct
 
@@ -50,7 +50,7 @@ module Delegate = Make(struct
           | (Some l_ctx, None) -> P.sprintf "Only: launch context: %s" l_ctx
           | _ -> "Neither launch context or location provided from system")
        |> print_endline);
-      more_video ()
+      video ()
       (* launch_video () *)
 
   end)

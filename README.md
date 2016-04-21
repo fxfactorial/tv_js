@@ -58,3 +58,25 @@ $ js_of_ocaml application -o application.js
 
 Now you have type safe `JavaScript` that the Apple TV can run.
 
+More Full Featured example
+==============================
+
+Included in this repo is a more full featured example that uses
+`OCaml` bindings to both `express` and `electron` as a Desktop
+application that starts a stream from the local client and streams it
+to the Apple TV, ie:
+
+```ocaml
+let video () =
+  let (player, playlist, media_item) =
+    new player (),
+    new playlist (),
+    new media_item `Video ~url:"http://localhost:9001/working_server.mov"
+  in
+  player#set_playlist playlist;
+  player#playlist#push ~media_item;
+  player#present
+```
+
+The full featured example requires you to have npm installed
+`electron`, `jade`, `electron`. 
