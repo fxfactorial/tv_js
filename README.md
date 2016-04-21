@@ -10,8 +10,16 @@ Installation
 
 `git clone` this repo, `cd` to it and then do:
 
+*Note*: You'll need to have to npm installed `electron`, `jade`, `express`
+and on `ubuntu` you might have to do: 
+
+```shell 
+$ sudo ln -s $(which nodejs) /usr/bin/node
+```
+
+
 ```shell
-opam pin add tv_js . -y
+$ opam pin add tv_js . -y
 ```
 
 Usage
@@ -24,7 +32,7 @@ Here's a starting point:
 
 ```ocaml
 (* file is called application.ml *)
-module Delegate = Make(struct
+module Delegate = Tv_js.Make(struct
 
     let on_exit obj =
       match obj#reloading with
@@ -86,6 +94,3 @@ let video () =
   player#playlist#push ~media_item;
   player#present
 ```
-
-The full featured example requires you to have npm installed
-`electron`, `jade`, `electron`. 
