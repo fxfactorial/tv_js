@@ -5,6 +5,15 @@ These are `OCaml` bindings to the TVML JavaScript environment.
 
 Create amazing Apple TV applications using `OCaml`!
 
+Installation
+==============
+
+`git clone` this repo, `cd` to it and then do:
+
+```shell
+opam pin add tv_js . -y
+```
+
 Usage
 ======
 
