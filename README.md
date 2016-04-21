@@ -83,6 +83,9 @@ Included in this repo is a more full featured example that uses
 application that starts a stream from the local client and streams it
 to the Apple TV, ie:
 
+You'll have to do `npm install express` in the example directory as
+well.
+
 ```ocaml
 let video () =
   let (player, playlist, media_item) =

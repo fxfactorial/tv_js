@@ -1,0 +1,17 @@
+{
+    "name": "something",
+    "version": "0.0.1",
+    "main": "build/main.js",
+    "scripts": {
+	"test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Edgar Aroutiounian",
+    "dependencies": {
+	"electron-prebuilt":"^0.33.7",
+	"express":"*"
+    },
+    "devDependencies": {
+	"node-sass": "^3.4.1",
+	"jade":"*"
+    }
+}
